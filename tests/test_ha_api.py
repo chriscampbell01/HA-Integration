@@ -4,7 +4,7 @@ import unittest
 from ha_api import process_request
 
 
-class HomeAssistantAPITests(unittest.TestCase):
+class TestHAAPI(unittest.TestCase):
     def test_health_endpoint(self):
         status, payload = process_request("GET", "/health")
         self.assertEqual(status, 200)
@@ -57,6 +57,15 @@ class HomeAssistantAPITests(unittest.TestCase):
             method="POST",
             path="/api/v1/events",
             body=json.dumps({"data": {"entity_id": "light.kitchen"}}).encode("utf-8"),
+        )
+        self.assertEqual(status, 400)
+        self.assertEqual(payload, {"error": "missing_event"})
+
+    def test_events_rejects_non_string_event(self):
+        status, payload = process_request(
+            method="POST",
+            path="/api/v1/events",
+            body=json.dumps({"event": 123}).encode("utf-8"),
         )
         self.assertEqual(status, 400)
         self.assertEqual(payload, {"error": "missing_event"})

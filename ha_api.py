@@ -1,5 +1,6 @@
 import json
 import os
+import secrets
 from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlparse
@@ -24,7 +25,7 @@ def process_request(method, path, headers=None, body=b"", expected_token=None):
     if method == "POST" and parsed_path == "/api/v1/events":
         if expected_token:
             authorization = headers.get("Authorization", "")
-            if authorization != f"Bearer {expected_token}":
+            if not secrets.compare_digest(authorization, f"Bearer {expected_token}"):
                 return 401, {"error": "unauthorized"}
 
         if not body:
@@ -36,7 +37,7 @@ def process_request(method, path, headers=None, body=b"", expected_token=None):
             return 400, {"error": "invalid_json"}
 
         event = payload.get("event")
-        if not event:
+        if not isinstance(event, str) or not event.strip():
             return 400, {"error": "missing_event"}
 
         return 202, {
