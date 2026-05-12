@@ -42,7 +42,10 @@ def process_request(method, path, headers=None, body=b"", expected_token=None):
             return 400, {"error": "invalid_json"}
 
         event = payload.get("event")
-        if not isinstance(event, str) or not event.strip():
+        if not isinstance(event, str):
+            return 400, {"error": "missing_event"}
+        event = event.strip()
+        if not event:
             return 400, {"error": "missing_event"}
 
         return 202, {
