@@ -33,9 +33,7 @@ class TestHAAPI(unittest.TestCase):
             method="POST",
             path="/api/v1/events",
             headers={"Authorization": "Bearer secret"},
-            body=json.dumps({"event": "light_toggle", "data": {"entity_id": "light.kitchen"}}).encode(
-                "utf-8"
-            ),
+            body=json.dumps({"event": "light_toggle", "data": {"entity_id": "light.kitchen"}}).encode("utf-8"),
             expected_token="secret",
         )
         self.assertEqual(status, 202)

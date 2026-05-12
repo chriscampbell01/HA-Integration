@@ -25,7 +25,11 @@ def process_request(method, path, headers=None, body=b"", expected_token=None):
     if method == "POST" and parsed_path == "/api/v1/events":
         if expected_token:
             authorization = headers.get("Authorization", "")
-            if not secrets.compare_digest(authorization, f"Bearer {expected_token}"):
+            auth_prefix = "Bearer "
+            if not authorization.startswith(auth_prefix):
+                return 401, {"error": "unauthorized"}
+            provided_token = authorization[len(auth_prefix) :]
+            if not secrets.compare_digest(provided_token, expected_token):
                 return 401, {"error": "unauthorized"}
 
         if not body:
@@ -61,7 +65,18 @@ class HAAPIHandler(BaseHTTPRequestHandler):
         self.wfile.write(response)
 
     def _handle(self, method):
-        content_length = int(self.headers.get("Content-Length", "0"))
+        raw_content_length = self.headers.get("Content-Length", "0")
+        try:
+            content_length = int(raw_content_length)
+        except ValueError:
+            self._send_json(400, {"error": "invalid_content_length"})
+            return
+        if content_length < 0:
+            self._send_json(400, {"error": "invalid_content_length"})
+            return
+        if content_length > 1_048_576:
+            self._send_json(413, {"error": "payload_too_large"})
+            return
         body = self.rfile.read(content_length) if content_length > 0 else b""
         expected_token = os.environ.get("HA_API_TOKEN")
         status, payload = process_request(
