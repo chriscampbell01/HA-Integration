@@ -6,6 +6,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlparse
 
 TRUTHY_VALUES = {"1", "true", "yes"}
+MAX_PAYLOAD_SIZE = 1_048_576
 
 
 def process_request(method, path, headers=None, body=b"", expected_token=None):
@@ -74,7 +75,7 @@ class HAAPIHandler(BaseHTTPRequestHandler):
         if content_length < 0:
             self._send_json(400, {"error": "invalid_content_length"})
             return
-        if content_length > 1_048_576:
+        if content_length > MAX_PAYLOAD_SIZE:
             self._send_json(413, {"error": "payload_too_large"})
             return
         body = self.rfile.read(content_length) if content_length > 0 else b""
@@ -101,7 +102,11 @@ class HAAPIHandler(BaseHTTPRequestHandler):
 
 def run():
     host = os.environ.get("HOST", "127.0.0.1")
-    port = int(os.environ.get("PORT", "8080"))
+    port_value = os.environ.get("PORT", "8080")
+    try:
+        port = int(port_value)
+    except ValueError as exc:
+        raise ValueError("Invalid PORT value: must be a number") from exc
     server = ThreadingHTTPServer((host, port), HAAPIHandler)
     print(f"HA API listening on http://{host}:{port}")
     server.serve_forever()
