@@ -9,6 +9,18 @@ TRUTHY_VALUES = {"1", "true", "yes"}
 MAX_PAYLOAD_SIZE = 1_048_576
 
 
+def parse_content_length(raw_content_length, max_payload_size=MAX_PAYLOAD_SIZE):
+    try:
+        content_length = int(raw_content_length)
+    except ValueError:
+        return False, 400, "invalid_content_length", 0
+    if content_length < 0:
+        return False, 400, "invalid_content_length", 0
+    if content_length > max_payload_size:
+        return False, 413, "payload_too_large", 0
+    return True, 200, None, content_length
+
+
 def process_request(method, path, headers=None, body=b"", expected_token=None):
     headers = headers or {}
     parsed_path = urlparse(path).path
@@ -69,17 +81,9 @@ class HAAPIHandler(BaseHTTPRequestHandler):
         self.wfile.write(response)
 
     def _handle(self, method):
-        raw_content_length = self.headers.get("Content-Length", "0")
-        try:
-            content_length = int(raw_content_length)
-        except ValueError:
-            self._send_json(400, {"error": "invalid_content_length"})
-            return
-        if content_length < 0:
-            self._send_json(400, {"error": "invalid_content_length"})
-            return
-        if content_length > MAX_PAYLOAD_SIZE:
-            self._send_json(413, {"error": "payload_too_large"})
+        is_valid, status, error, content_length = parse_content_length(self.headers.get("Content-Length", "0"))
+        if not is_valid:
+            self._send_json(status, {"error": error})
             return
         body = self.rfile.read(content_length) if content_length > 0 else b""
         expected_token = os.environ.get("HA_API_TOKEN")

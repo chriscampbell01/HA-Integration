@@ -1,7 +1,7 @@
 import json
 import unittest
 
-from ha_api import process_request
+from ha_api import parse_content_length, process_request
 
 
 class TestHAAPI(unittest.TestCase):
@@ -76,6 +76,22 @@ class TestHAAPI(unittest.TestCase):
         )
         self.assertEqual(status, 400)
         self.assertEqual(payload, {"error": "empty_body"})
+
+    def test_events_strips_event_whitespace(self):
+        status, payload = process_request(
+            method="POST",
+            path="/api/v1/events",
+            body=json.dumps({"event": "  light_toggle  "}).encode("utf-8"),
+        )
+        self.assertEqual(status, 202)
+        self.assertEqual(payload["event"], "light_toggle")
+
+    def test_parse_content_length_rejects_too_large_payload(self):
+        is_valid, status, error, parsed = parse_content_length("1048577")
+        self.assertFalse(is_valid)
+        self.assertEqual(status, 413)
+        self.assertEqual(error, "payload_too_large")
+        self.assertEqual(parsed, 0)
 
 
 if __name__ == "__main__":
