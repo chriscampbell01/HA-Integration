@@ -4,6 +4,8 @@ from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlparse
 
+TRUTHY_VALUES = {"1", "true", "yes"}
+
 
 def process_request(method, path, headers=None, body=b"", expected_token=None):
     headers = headers or {}
@@ -25,8 +27,11 @@ def process_request(method, path, headers=None, body=b"", expected_token=None):
             if authorization != f"Bearer {expected_token}":
                 return 401, {"error": "unauthorized"}
 
+        if not body:
+            return 400, {"error": "empty_body"}
+
         try:
-            payload = json.loads(body.decode("utf-8") if body else "{}")
+            payload = json.loads(body.decode("utf-8"))
         except json.JSONDecodeError:
             return 400, {"error": "invalid_json"}
 
@@ -74,7 +79,7 @@ class HAAPIHandler(BaseHTTPRequestHandler):
         self._handle("POST")
 
     def log_message(self, fmt, *args):
-        if os.environ.get("HA_API_LOG_REQUESTS", "").lower() in {"1", "true", "yes"}:
+        if os.environ.get("HA_API_LOG_REQUESTS", "").lower() in TRUTHY_VALUES:
             super().log_message(fmt, *args)
 
 

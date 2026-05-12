@@ -4,7 +4,7 @@ import unittest
 from ha_api import process_request
 
 
-class ProcessRequestTests(unittest.TestCase):
+class HomeAssistantAPITests(unittest.TestCase):
     def test_health_endpoint(self):
         status, payload = process_request("GET", "/health")
         self.assertEqual(status, 200)
@@ -60,6 +60,15 @@ class ProcessRequestTests(unittest.TestCase):
         )
         self.assertEqual(status, 400)
         self.assertEqual(payload, {"error": "missing_event"})
+
+    def test_events_rejects_empty_body(self):
+        status, payload = process_request(
+            method="POST",
+            path="/api/v1/events",
+            body=b"",
+        )
+        self.assertEqual(status, 400)
+        self.assertEqual(payload, {"error": "empty_body"})
 
 
 if __name__ == "__main__":
