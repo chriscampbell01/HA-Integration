@@ -5,14 +5,15 @@ Minimal HTTP API for Home Assistant integrations.
 ## Run the API
 
 ```bash
-python /home/runner/work/HA-Integration/HA-Integration/ha_api.py
+python ha_api.py
 ```
 
 Optional environment variables:
 
-- `HOST` (default: `0.0.0.0`)
+- `HOST` (default: `127.0.0.1`)
 - `PORT` (default: `8080`)
 - `HA_API_TOKEN` (optional bearer token required for `POST /api/v1/events`)
+- `HA_API_LOG_REQUESTS` (`true`/`1`/`yes` enables HTTP request logs)
 
 ## Endpoints
 

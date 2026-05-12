@@ -52,6 +52,15 @@ class ProcessRequestTests(unittest.TestCase):
         self.assertEqual(status, 400)
         self.assertEqual(payload, {"error": "invalid_json"})
 
+    def test_events_rejects_missing_event(self):
+        status, payload = process_request(
+            method="POST",
+            path="/api/v1/events",
+            body=json.dumps({"data": {"entity_id": "light.kitchen"}}).encode("utf-8"),
+        )
+        self.assertEqual(status, 400)
+        self.assertEqual(payload, {"error": "missing_event"})
+
 
 if __name__ == "__main__":
     unittest.main()

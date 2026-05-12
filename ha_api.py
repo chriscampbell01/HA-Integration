@@ -74,11 +74,12 @@ class HAAPIHandler(BaseHTTPRequestHandler):
         self._handle("POST")
 
     def log_message(self, fmt, *args):
-        return
+        if os.environ.get("HA_API_LOG_REQUESTS", "").lower() in {"1", "true", "yes"}:
+            super().log_message(fmt, *args)
 
 
 def run():
-    host = os.environ.get("HOST", "0.0.0.0")
+    host = os.environ.get("HOST", "127.0.0.1")
     port = int(os.environ.get("PORT", "8080"))
     server = ThreadingHTTPServer((host, port), HAAPIHandler)
     print(f"HA API listening on http://{host}:{port}")
